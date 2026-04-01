@@ -44,7 +44,7 @@ export async function requireAdmin(
       },
       include: {
         user: {
-          select: { id: true, name: true, email: true, role: true, region: true, active: true }
+          select: { id: true, name: true, email: true, role: true, region: true, country: true, active: true }
         }
       }
     })
