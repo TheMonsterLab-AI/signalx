@@ -77,7 +77,7 @@ body {
          text-white/60 cursor-pointer transition-all duration-150;
 }
 .admin-sidebar .nav-item:hover {
-  @apply bg-white/8 text-white;
+  @apply bg-white/10 text-white;
 }
 .admin-sidebar .nav-item.active {
   @apply bg-primary/20 text-primary-fixed-dim;
