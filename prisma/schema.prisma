@@ -1,0 +1,588 @@
+// SignalX Platform - Database Schema
+// Prisma ORM + PostgreSQL (production) / SQLite (local dev)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = env("DATABASE_PROVIDER") // "postgresql" or "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SIGNALS (Core entity — anonymous submissions)
+// ─────────────────────────────────────────────────────────────────────────────
+model Signal {
+  id          String   @id @default(cuid())
+  trackingToken String @unique // 7-char user-facing token e.g. "SX-ABC12DE"
+  
+  // Classification
+  category    Category
+  country     String
+  title       String
+  content     String   @db.Text
+  
+  // Processing state
+  stage       SignalStage @default(SUBMITTED)
+  status      SignalStatus @default(PENDING)
+  
+  // ANN results
+  annScore    Float?
+  annGrade    AnnGrade?
+  annReport   AnnReport?
+  
+  // Distribution
+  distributed Boolean  @default(false)
+  distributedAt DateTime?
+  
+  // Metadata (never personal)
+  submittedAt    DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  // SecureDrop 원칙: 마지막 접근 시각만 유지 (이전 기록 오버라이트)
+  lastAccessedAt DateTime?
+  
+  // Processing assignments
+  assignedLeaderId String?
+  assignedLeader   AdminUser? @relation("LeaderSignals", fields: [assignedLeaderId], references: [id])
+  
+  // Relations
+  attachments  Attachment[]
+  stageHistory StageHistory[]
+  distributions Distribution[]
+  annVerification AnnVerification?
+  inquiries       MediaInquiry[]
+  
+  @@index([trackingToken])
+  @@index([stage, category])
+  @@index([country, stage])
+  @@index([submittedAt])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FILE ATTACHMENTS (encrypted, EXIF-stripped)
+// ─────────────────────────────────────────────────────────────────────────────
+model Attachment {
+  id          String   @id @default(cuid())
+  signalId    String
+  signal      Signal   @relation(fields: [signalId], references: [id], onDelete: Cascade)
+  
+  originalName  String  // stored as hash only
+  storagePath   String  // encrypted storage path
+  mimeType      String
+  sizeBytes     Int
+  
+  exifStripped  Boolean @default(false)
+  encryptedAt   DateTime @default(now())
+  
+  @@index([signalId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SIGNAL STAGE HISTORY (audit trail for tracking dashboard)
+// ─────────────────────────────────────────────────────────────────────────────
+model StageHistory {
+  id        String   @id @default(cuid())
+  signalId  String
+  signal    Signal   @relation(fields: [signalId], references: [id], onDelete: Cascade)
+  
+  stage     SignalStage
+  note      String?
+  actorType ActorType   @default(SYSTEM)
+  actorId   String?     // admin user id or "SYSTEM"
+  timestamp DateTime    @default(now())
+  
+  @@index([signalId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ANN VERIFICATION (7-step engine results)
+// ─────────────────────────────────────────────────────────────────────────────
+model AnnVerification {
+  id        String   @id @default(cuid())
+  signalId  String   @unique
+  signal    Signal   @relation(fields: [signalId], references: [id], onDelete: Cascade)
+  
+  // 7 Steps
+  step1_sourceAnalysis    Json?  // {score, notes, passed}
+  step2_crossVerification Json?  // {gpt, claude, gemini, llama, average}
+  step3_dataValidation    Json?  // {sources_checked, matches, mismatches}
+  step4_imageAnalysis     Json?  // {deepfake_detected, exif_analysis, verdict}
+  step5_videoAnalysis     Json?  // {analyzed, deepfake_detected, verdict}
+  step6_patternDetection  Json?  // {anomaly_score, related_signals, org_flag}
+  step7_finalScore        Json?  // {score, grade, recommendation}
+  
+  // Aggregate
+  finalScore  Float?
+  finalGrade  AnnGrade?
+  
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+  processingMs Int?    // milliseconds taken
+  
+  // Report
+  reportGenerated Boolean  @default(false)
+  reportPath      String?  // path to generated PDF
+  
+  @@index([signalId])
+}
+
+// ANN Report (final PDF artifact)
+model AnnReport {
+  id        String   @id @default(cuid())
+  signalId  String   @unique
+  signal    Signal   @relation(fields: [signalId], references: [id], onDelete: Cascade)
+  
+  version     Int      @default(1)
+  pdfPath     String?
+  webContent  String?  @db.Text  // HTML version for web view
+  
+  generatedAt DateTime @default(now())
+  approvedBy  String?
+  approvedAt  DateTime?
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DISTRIBUTION (partner media delivery log)
+// ─────────────────────────────────────────────────────────────────────────────
+model Distribution {
+  id        String   @id @default(cuid())
+  signalId  String
+  signal    Signal   @relation(fields: [signalId], references: [id], onDelete: Cascade)
+  
+  partnerId  String
+  partner    MediaPartner @relation(fields: [partnerId], references: [id])
+  
+  status     DistributionStatus @default(PENDING)
+  sentAt     DateTime?
+  deliveredAt DateTime?
+  errorMsg   String?
+  
+  @@index([signalId])
+  @@index([partnerId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MEDIA PARTNERS (distribution targets)
+// ─────────────────────────────────────────────────────────────────────────────
+model MediaPartner {
+  id          String   @id @default(cuid())
+  name        String
+  type        PartnerType
+  country     String
+  region      String
+  
+  // Delivery config
+  webhookUrl  String?
+  emailAddress String?
+  apiKey      String?  // encrypted
+  
+  active      Boolean  @default(true)
+  categories  String[] // which signal categories they receive
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  distributions Distribution[]
+  
+  @@index([country, active])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ADMIN USERS (internal team — NOT submission users)
+// ─────────────────────────────────────────────────────────────────────────────
+model AdminUser {
+  id       String    @id @default(cuid())
+  email    String    @unique
+  name     String
+  role     AdminRole
+  region   String?
+  country  String?
+  
+  // Auth
+  hashedPassword String
+  totpSecret     String?   // 2FA TOTP secret (encrypted)
+  totpEnabled    Boolean   @default(false)
+  lastLoginAt    DateTime?
+  loginAttempts  Int       @default(0)
+  lockedUntil    DateTime?
+  
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  assignedSignals Signal[] @relation("LeaderSignals")
+  assignedInquiries MediaInquiry[]
+  auditLogs       AuditLog[]
+  sessions        AdminSession[]
+  
+  @@index([email])
+  @@index([role, active])
+}
+
+// Admin Sessions
+model AdminSession {
+  id        String    @id @default(cuid())
+  userId    String
+  user      AdminUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  token     String    @unique // hashed session token
+  ipAddress String?   // hashed
+  userAgent String?
+  
+  createdAt DateTime  @default(now())
+  expiresAt DateTime
+  revokedAt DateTime?
+  
+  @@index([token])
+  @@index([userId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AUDIT LOG (immutable — all admin actions logged)
+// ─────────────────────────────────────────────────────────────────────────────
+model AuditLog {
+  id        String    @id @default(cuid())
+  userId    String?
+  user      AdminUser? @relation(fields: [userId], references: [id])
+  
+  action    String    // e.g. "SIGNAL_APPROVED", "DISTRIBUTION_SENT"
+  entityType String   // e.g. "Signal", "AdminUser"
+  entityId   String?
+  details    Json?    // additional context
+  
+  ipAddress  String?  // hashed
+  timestamp  DateTime @default(now())
+  
+  @@index([userId])
+  @@index([action])
+  @@index([timestamp])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RISK NODES (for globe visualization)
+// ─────────────────────────────────────────────────────────────────────────────
+model RiskNode {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  country   String
+  lat       Float
+  lon       Float
+  riskLevel RiskLevel @default(STABLE)
+  type      String
+  
+  signalCount Int    @default(0)
+  score       Float  @default(0)
+  
+  updatedAt DateTime @updatedAt
+  
+  @@index([riskLevel])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────────────────────────────────────
+enum Category {
+  POLITICS
+  CORPORATE
+  FINANCE
+  TECHNOLOGY
+  SOCIAL
+  CRIME
+}
+
+enum SignalStage {
+  SUBMITTED
+  LEADER_REVIEW
+  ANN_PROCESSING
+  VERIFICATION_COMPLETE
+  DISTRIBUTION_IN_PROGRESS
+  DISTRIBUTION_COMPLETE
+}
+
+enum SignalStatus {
+  PENDING
+  IN_PROGRESS
+  VERIFIED
+  LIKELY_TRUE
+  UNDER_REVIEW
+  UNVERIFIED
+  LIKELY_FALSE
+  REJECTED
+}
+
+enum AnnGrade {
+  VERIFIED        // 85-100
+  LIKELY_TRUE     // 70-84
+  UNDER_REVIEW    // 50-69
+  UNVERIFIED      // 30-49
+  LIKELY_FALSE    // 0-29
+}
+
+enum DistributionStatus {
+  PENDING
+  SENT
+  DELIVERED
+  FAILED
+}
+
+enum PartnerType {
+  MEDIA
+  GOVERNMENT
+  NGO
+  FINANCIAL
+  LEGAL
+}
+
+enum AdminRole {
+  GLOBAL_DIRECTOR
+  REGIONAL_LEAD
+  SIGNAL_LEADER
+  ANALYST
+  MEDIA_PARTNER
+}
+
+enum ActorType {
+  SYSTEM
+  ADMIN
+  ANN_ENGINE
+}
+
+enum RiskLevel {
+  CRITICAL
+  HIGH
+  ELEVATED
+  MONITOR
+  STABLE
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EMAIL LOG — 모든 발송 메일 감사 기록 (변조 불가)
+// 수신: report@signalx.global (단일)
+// 발신: 자동화 시스템 → 다수
+// ─────────────────────────────────────────────────────────────────────────────
+model EmailLog {
+  id              String      @id @default(cuid())
+  
+  // 방향
+  direction       EmailDirection // INBOUND | OUTBOUND
+  
+  // 식별자 (원본 이메일 주소 저장 안 함 — HMAC 해시만)
+  recipientHash   String      // 수신자 이메일 HMAC-SHA256 해시
+  senderHash      String      // 발신자 이메일 HMAC-SHA256 해시
+  
+  // 메일 분류
+  emailType       EmailType
+  
+  // 감사 필드 (원본 내용 없음 — 해시만)
+  subjectHash     String      // 제목 HMAC 해시
+  contentHash     String      // 본문 HMAC 해시 (SHA-256)
+  
+  // 연계 제보
+  signalToken     String?     // 관련 추적 토큰 (있을 경우)
+  
+  // 전송 결과
+  status          EmailStatus @default(QUEUED)
+  providerMsgId   String?     // AWS SES / Postmark 메시지 ID
+  deliveredAt     DateTime?
+  failureReason   String?
+  
+  // 감사
+  sentAt          DateTime    @default(now())
+  sentByAdminId   String?     // 수동 발송 시 관리자 ID
+  
+  @@index([signalToken])
+  @@index([sentAt])
+  @@index([emailType])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// VAULT TRANSFER — 외부 DB → 내부 Secure Vault 이동 이력
+// 외부 제보 접수 후 5초 이내 실행 보장
+// ─────────────────────────────────────────────────────────────────────────────
+model VaultTransfer {
+  id              String          @id @default(cuid())
+  signalId        String          @unique
+  
+  // 이동 타이밍
+  receivedAt      DateTime        // 제보 접수 시각
+  transferredAt   DateTime?       // Vault 이동 완료 시각
+  externalDeletedAt DateTime?     // 외부 DB 원본 삭제 시각
+  
+  // 처리 결과
+  status          VaultStatus     @default(PENDING)
+  latencyMs       Int?            // 접수→이동 소요 시간 (ms)
+  
+  // 무결성 검증
+  contentHashBefore  String       // 이동 전 내용 해시
+  contentHashAfter   String?      // 이동 후 내용 해시 (일치 확인용)
+  integrityVerified  Boolean      @default(false)
+  
+  // 오류
+  errorMsg        String?
+  retryCount      Int             @default(0)
+  
+  createdAt       DateTime        @default(now())
+  
+  @@index([status])
+  @@index([receivedAt])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EMAIL ENUMS
+// ─────────────────────────────────────────────────────────────────────────────
+enum EmailDirection {
+  INBOUND   // report@signalx.global 수신
+  OUTBOUND  // 시스템 자동 발송
+}
+
+enum EmailType {
+  SUBMISSION_RECEIPT   // 제보 접수 확인 (자동 리턴 메일)
+  ANN_REPORT_READY     // ANN 리포트 완성 알림
+  DISTRIBUTION_SENT    // 파트너 배포 완료 알림
+  ADMIN_ALERT          // 내부 운영팀 알림
+  PARTNER_DELIVERY     // 파트너 미디어 배포 이메일
+  SYSTEM_NOTICE        // 시스템 공지
+}
+
+enum EmailStatus {
+  QUEUED
+  SENDING
+  DELIVERED
+  FAILED
+  BOUNCED
+}
+
+enum VaultStatus {
+  PENDING        // 이동 대기
+  TRANSFERRING   // 이동 중
+  TRANSFERRED    // 이동 완료
+  DELETED_EXTERNAL // 외부 원본 삭제 완료
+  VERIFIED       // 무결성 검증 완료
+  FAILED         // 이동 실패
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REPORTER — 파트너 기자·미디어 개인 DB
+// ─────────────────────────────────────────────────────────────────────────────
+model Reporter {
+  id             String   @id @default(cuid())
+  
+  // 기자 정보
+  name           String
+  email          String   @unique
+  phone          String?
+  
+  // 소속
+  mediaPartnerId String?
+  mediaPartner   MediaPartner? @relation(fields: [mediaPartnerId], references: [id])
+  organization   String        // 언론사명 (직접 입력도 가능)
+  department     String?       // 부서 (예: 경제부, 사회부)
+  title          String?       // 직책 (예: 선임기자, 편집장)
+  country        String
+  
+  // 선호 분야 (배포 자동 매칭용)
+  preferredCategories  String[]  // POLITICS, CORPORATE, FINANCE, ...
+  preferredLanguages   String[]  // ko, en, ja, ...
+  
+  // 상태
+  active         Boolean  @default(true)
+  verified       Boolean  @default(false)  // 이메일 검증 완료
+  
+  // 통계
+  totalDeliveries   Int @default(0)
+  totalResponses    Int @default(0)
+  responseRate      Float @default(0) // 응답률 %
+  lastDeliveredAt   DateTime?
+  lastResponseAt    DateTime?
+  
+  // 메모
+  notes          String?
+  tags           String[]
+  
+  // 감사
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  addedById      String?
+  
+  // Relations
+  distributions  Distribution[]
+  inquiries      MediaInquiry[]
+  
+  @@index([country])
+  @@index([organization])
+  @@index([active])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MEDIA INQUIRY — 반대 문의·답변·확인 요청 관리
+// ─────────────────────────────────────────────────────────────────────────────
+model MediaInquiry {
+  id              String         @id @default(cuid())
+  
+  // 연계 정보
+  signalId        String?        // 관련 제보 (Optional — 일반 문의일 수 있음)
+  signal          Signal?        @relation(fields: [signalId], references: [id])
+  reporterId      String?
+  reporter        Reporter?      @relation(fields: [reporterId], references: [id])
+  
+  // 발신자 정보 (Reporter DB 미등록 언론사도 올 수 있음)
+  fromEmail       String?        // 원본 미저장 — HMAC 해시로 변환 후 저장
+  fromEmailHash   String?        // HMAC-SHA256 해시
+  fromName        String?
+  fromOrganization String?
+  
+  // 문의 내용
+  type            InquiryType
+  subject         String
+  content         String         @db.Text
+  
+  // 처리 상태
+  status          InquiryStatus  @default(RECEIVED)
+  priority        InquiryPriority @default(NORMAL)
+  
+  // 내부 처리
+  assignedToId    String?
+  assignedTo      AdminUser?     @relation(fields: [assignedToId], references: [id])
+  internalNote    String?
+  
+  // 답변
+  replyContent    String?        @db.Text
+  repliedAt       DateTime?
+  repliedById     String?
+  
+  // 감사
+  receivedAt      DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  
+  @@index([status])
+  @@index([signalId])
+  @@index([receivedAt])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ENUMS for new models
+// ─────────────────────────────────────────────────────────────────────────────
+enum InquiryType {
+  FACTUAL_DISPUTE     // 사실 관계 반박
+  ADDITIONAL_INFO     // 추가 정보 제공
+  TAKEDOWN_REQUEST    // 배포 철회 요청
+  CONFIRMATION        // 사실 확인 요청
+  GENERAL             // 일반 문의
+}
+
+enum InquiryStatus {
+  RECEIVED      // 수신됨
+  IN_REVIEW     // 검토 중
+  REPLIED       // 답변 완료
+  ESCALATED     // 상위 에스컬레이션
+  CLOSED        // 종결
+}
+
+enum InquiryPriority {
+  URGENT   // 법적 대응 필요 가능성
+  HIGH
+  NORMAL
+  LOW
+}

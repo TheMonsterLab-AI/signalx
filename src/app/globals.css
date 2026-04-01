@@ -1,0 +1,171 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Material Symbols ──────────────────────────────────────────────────────── */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+.material-symbols-filled {
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* ── Base ───────────────────────────────────────────────────────────────────── */
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: #f3fbf5;
+  color: #161d1a;
+  min-height: 100dvh;
+}
+
+/* ── Custom Scrollbar ───────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #bccac1; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #6d7a72; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── Design Patterns from Stitch ───────────────────────────────────────────── */
+.glass-nav {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.glass-header {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.auth-gradient {
+  background: linear-gradient(135deg, #006c4d 0%, #3eb489 100%);
+}
+
+.hero-gradient {
+  background: linear-gradient(135deg, #006c4d 0%, #3eb489 100%);
+}
+
+.security-mesh {
+  background-image: radial-gradient(#bccac1 0.5px, transparent 0.5px);
+  background-size: 24px 24px;
+  opacity: 0.15;
+}
+
+.soft-glow {
+  filter: drop-shadow(0 0 25px rgba(62, 180, 137, 0.4));
+}
+
+/* Trust gauge for ANN report */
+.trust-gauge {
+  background: conic-gradient(from 180deg at 50% 50%, #006c4d 0deg, #3eb489 331deg, #eef6f0 331deg);
+}
+
+/* ── Admin Sidebar (from Admin_Global_Ops) ─────────────────────────────────── */
+.admin-sidebar {
+  background: #1a2e24;
+  min-height: 100vh;
+}
+
+.admin-sidebar .nav-item {
+  @apply flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium 
+         text-white/60 cursor-pointer transition-all duration-150;
+}
+.admin-sidebar .nav-item:hover {
+  @apply bg-white/8 text-white;
+}
+.admin-sidebar .nav-item.active {
+  @apply bg-primary/20 text-primary-fixed-dim;
+}
+
+/* ── Status Badges ──────────────────────────────────────────────────────────── */
+.status-badge {
+  @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide;
+}
+.status-verified    { @apply bg-primary/10 text-primary; }
+.status-likely-true { @apply bg-primary-container/20 text-on-primary-container; }
+.status-review      { @apply bg-amber-100 text-amber-700; }
+.status-unverified  { @apply bg-surface-container text-outline; }
+.status-false       { @apply bg-error-container text-on-error-container; }
+
+.risk-critical  { @apply bg-red-100 text-red-700; }
+.risk-high      { @apply bg-amber-100 text-amber-700; }
+.risk-elevated  { @apply bg-yellow-100 text-yellow-700; }
+.risk-monitor   { @apply bg-blue-100 text-blue-700; }
+.risk-stable    { @apply bg-primary/10 text-primary; }
+
+/* ── ANN Score Circle ───────────────────────────────────────────────────────── */
+.ann-score-ring {
+  @apply relative inline-flex items-center justify-center;
+}
+
+/* ── Stage Progress ─────────────────────────────────────────────────────────── */
+.stage-step { @apply flex flex-col items-center gap-1 relative; }
+.stage-step::before {
+  content: '';
+  @apply absolute top-3 left-1/2 w-full h-0.5 bg-outline-variant;
+  transform: translateX(50%);
+}
+.stage-step:last-child::before { display: none; }
+.stage-step.completed::before { @apply bg-primary; }
+
+/* ── Form Focus States ──────────────────────────────────────────────────────── */
+.form-field {
+  @apply w-full bg-white border border-outline-variant/40 
+         focus:border-primary focus:ring-4 focus:ring-primary/5 
+         rounded-2xl py-4 px-6 text-base transition-all 
+         placeholder:text-on-surface-variant/40 outline-none;
+}
+
+/* ── Card shadows from design ───────────────────────────────────────────────── */
+.card-shadow {
+  box-shadow: 0 1px 3px rgba(22, 29, 26, 0.06), 0 1px 2px rgba(22, 29, 26, 0.04);
+}
+.card-shadow-md {
+  box-shadow: 0 4px 6px rgba(22, 29, 26, 0.07), 0 2px 4px rgba(22, 29, 26, 0.05);
+}
+.card-shadow-xl {
+  box-shadow: 0 20px 40px rgba(0, 108, 77, 0.05), 0 8px 16px rgba(22, 29, 26, 0.04);
+}
+
+/* ── Animations ─────────────────────────────────────────────────────────────── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up { animation: fadeInUp 0.4s ease forwards; }
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, #e8f0ea 25%, #f3fbf5 50%, #e8f0ea 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* ── Token Display ──────────────────────────────────────────────────────────── */
+.token-display {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  letter-spacing: 0.15em;
+}
+
+/* ── Responsive Admin Layout ────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .admin-sidebar {
+    position: fixed;
+    left: -280px;
+    z-index: 50;
+    transition: left 0.25s ease;
+  }
+  .admin-sidebar.open {
+    left: 0;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.15);
+  }
+}

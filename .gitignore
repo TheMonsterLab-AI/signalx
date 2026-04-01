@@ -1,0 +1,56 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Next.js
+.next/
+out/
+build/
+
+# Production
+dist/
+
+# Env files (절대 커밋 금지)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.railway
+
+# Prisma
+prisma/migrations/dev.db
+*.db
+*.db-journal
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# Cloudflare tunnel credentials (절대 커밋 금지)
+*.json
+deploy/*.json
+.cloudflared/
+
+# Vault (로컬 개발용 임시 파일)
+/tmp/signalx-vault/
+*.vault
+
+# Build artifacts
+.turbo/
+
+# Railway 환경변수 파일 (민감 정보 포함)
+deploy/.env.railway
