@@ -44,6 +44,7 @@ yarn-error.log*
 *.json
 !package.json
 !package-lock.json
+!tsconfig.json
 deploy/*.json
 .cloudflared/
 
