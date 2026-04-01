@@ -42,6 +42,7 @@ yarn-error.log*
 
 # Cloudflare tunnel credentials (절대 커밋 금지)
 *.json
+!package-lock.json
 deploy/*.json
 .cloudflared/
 
