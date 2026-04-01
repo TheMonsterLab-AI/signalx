@@ -152,7 +152,10 @@ model Distribution {
   
   partnerId  String
   partner    MediaPartner @relation(fields: [partnerId], references: [id])
-  
+
+  reporterId String?
+  reporter   Reporter? @relation(fields: [reporterId], references: [id])
+
   status     DistributionStatus @default(PENDING)
   sentAt     DateTime?
   deliveredAt DateTime?
@@ -184,7 +187,8 @@ model MediaPartner {
   updatedAt   DateTime @updatedAt
   
   distributions Distribution[]
-  
+  reporters     Reporter[]
+
   @@index([country, active])
 }
 
