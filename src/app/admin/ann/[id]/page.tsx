@@ -31,9 +31,10 @@ export default function AdminANNDetail() {
   const params  = useParams()
   const router  = useRouter()
   const signalId = params?.id as string
-  const [signal,   setSignal]   = useState<any>(null)
-  const [approved, setApproved] = useState(false)
-  const [loading,  setLoading]  = useState(false)
+  const [signal,         setSignal]         = useState<any>(null)
+  const [approved,       setApproved]       = useState(false)
+  const [loading,        setLoading]        = useState(false)
+  const [reprocessMsg,   setReprocessMsg]   = useState<{ ok: boolean; text: string } | null>(null)
 
   useEffect(() => {
     if (!signalId) return
@@ -55,13 +56,45 @@ export default function AdminANNDetail() {
 
   const handleReprocess = async () => {
     setLoading(true)
+    setReprocessMsg(null)
+    console.log('[ANN] reprocess triggered for signalId:', signalId)
     try {
-      await fetch(`/api/admin/ann/${signalId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'reprocess' }) })
-    } finally { setLoading(false) }
+      const res = await fetch(`/api/admin/ann/${signalId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reprocess' }),
+      })
+      const data = await res.json()
+      console.log('[ANN] reprocess response:', res.status, data)
+      if (res.ok) {
+        setReprocessMsg({ ok: true, text: data.message || 'ANN 재처리가 시작되었습니다.' })
+      } else {
+        setReprocessMsg({ ok: false, text: data.error || `오류 ${res.status}` })
+      }
+    } catch (err) {
+      console.error('[ANN] reprocess fetch error:', err)
+      setReprocessMsg({ ok: false, text: '네트워크 오류가 발생했습니다.' })
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
     <div className="p-6 max-w-[1400px] mx-auto w-full flex flex-col gap-6">
+
+      {/* Reprocess status banner */}
+      {reprocessMsg && (
+        <div className={`px-4 py-3 rounded-xl text-sm font-medium flex items-center gap-2 ${
+          reprocessMsg.ok
+            ? 'bg-primary/10 text-primary border border-primary/20'
+            : 'bg-error-container text-on-error-container border border-error/20'
+        }`}>
+          <span className="material-symbols-outlined text-base">
+            {reprocessMsg.ok ? 'check_circle' : 'error'}
+          </span>
+          {reprocessMsg.text}
+        </div>
+      )}
 
       {/* Breadcrumb + Header */}
       <div className="flex justify-between items-end flex-wrap gap-4">
@@ -84,10 +117,12 @@ export default function AdminANNDetail() {
           <button
             onClick={handleReprocess}
             disabled={loading}
-            className="px-5 py-2.5 rounded-full bg-surface-container-high text-on-surface font-semibold hover:bg-surface-container-highest transition-all flex items-center gap-2 text-sm"
+            className="px-5 py-2.5 rounded-full bg-surface-container-high text-on-surface font-semibold hover:bg-surface-container-highest transition-all flex items-center gap-2 text-sm disabled:opacity-60"
           >
-            <span className="material-symbols-outlined text-sm">refresh</span>
-            재검증
+            <span className={`material-symbols-outlined text-sm ${loading ? 'animate-spin' : ''}`}>
+              {loading ? 'progress_activity' : 'refresh'}
+            </span>
+            {loading ? '처리 중...' : '재검증'}
           </button>
           <button
             onClick={handleApprove}
