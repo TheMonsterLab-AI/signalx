@@ -56,7 +56,7 @@ export default function AdminANNDetail() {
   const handleReprocess = async () => {
     setLoading(true)
     try {
-      await fetch(`/api/ann/${signalId}/reprocess`, { method: 'POST' })
+      await fetch(`/api/admin/ann/${signalId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'reprocess' }) })
     } finally { setLoading(false) }
   }
 
