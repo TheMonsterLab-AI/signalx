@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(response, {
       headers: {
         'Set-Cookie': [
-          `sx_session=${rawToken}; HttpOnly; Secure; SameSite=Strict; Path=/admin; Max-Age=${SESSION_DURATION_HOURS * 3600}`,
+          `sx_session=${rawToken}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${SESSION_DURATION_HOURS * 3600}`,
         ].join(', '),
         'Cache-Control': 'no-store',
       }
@@ -149,7 +149,7 @@ export async function DELETE(req: NextRequest) {
   
   return NextResponse.json({ success: true }, {
     headers: {
-      'Set-Cookie': 'sx_session=; HttpOnly; Secure; SameSite=Strict; Path=/admin; Max-Age=0',
+      'Set-Cookie': 'sx_session=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0',
     }
   })
 }
