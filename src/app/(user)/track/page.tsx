@@ -44,25 +44,8 @@ function TrackPageContent() {
     : -1
 
   return (
-    <div className="font-body text-on-surface" style={{ backgroundColor: '#f3fbf5' }}>
-
-      {/* Header */}
-      <header className="fixed top-0 w-full z-50 bg-emerald-50/90 backdrop-blur-xl shadow-sm">
-        <div className="flex justify-between items-center px-8 py-4 max-w-7xl mx-auto">
-          <div className="flex items-center gap-3">
-            <span className="material-symbols-outlined text-emerald-800">signal_cellular_alt</span>
-            <Link href="/" className="text-xl font-bold tracking-tighter text-emerald-900">SignalX</Link>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link href="/" className="text-sm font-medium text-on-surface-variant hover:text-primary transition-colors">홈</Link>
-            <Link href="/submit" className="bg-primary text-white px-5 py-2 rounded-full font-semibold text-sm active:scale-95">
-              새 제보
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      <main className="min-h-screen pt-24 pb-20 max-w-4xl mx-auto px-6">
+    <>
+    <main className="min-h-screen pt-24 pb-20 max-w-4xl mx-auto px-6">
 
         {/* Title */}
         <div className="text-center mb-12 pt-8">
@@ -274,9 +257,9 @@ function TrackPageContent() {
         <Link href="/"       className="flex flex-col items-center opacity-60"><span className="material-symbols-outlined">home</span><span className="text-[10px] font-bold">홈</span></Link>
         <Link href="/submit" className="flex flex-col items-center opacity-60"><span className="material-symbols-outlined">sensors</span><span className="text-[10px] font-bold">제보</span></Link>
         <Link href="/track"  className="flex flex-col items-center text-primary"><span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>manage_search</span><span className="text-[10px] font-bold">확인</span></Link>
-        <Link href="#"       className="flex flex-col items-center opacity-60"><span className="material-symbols-outlined">info</span><span className="text-[10px] font-bold">소개</span></Link>
+        <Link href="/about"       className="flex flex-col items-center opacity-60"><span className="material-symbols-outlined">info</span><span className="text-[10px] font-bold">소개</span></Link>
       </nav>
-    </div>
+    </>
   )
 }
 

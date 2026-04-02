@@ -49,7 +49,7 @@ export default function ANNReportPage() {
           <Link href="/" className="text-2xl font-semibold tracking-tighter text-emerald-900">SignalX</Link>
           <div className="hidden md:flex gap-6">
             {['홈', '시그널', '맵', '소개'].map(l => (
-              <Link key={l} href="#" className="text-on-surface-variant hover:text-primary transition-colors text-sm font-medium">{l}</Link>
+              <button key={l} type="button" className="text-on-surface-variant hover:text-primary transition-colors text-sm font-medium">{l}</button>
             ))}
           </div>
         </div>
@@ -240,7 +240,7 @@ export default function ANNReportPage() {
             ))}
           </div>
           <div className="mt-6 p-4 bg-primary/5 rounded-2xl border border-primary/10 text-sm text-on-surface-variant leading-relaxed">
-            <strong className="text-primary">배포 상태:</strong> 검증 완료 시각으로부터 자동 배포됨. 모든 배포는 암호화된 채널을 통해 전송되며, 수신 확인 로그가 기록됩니다.
+            <strong className="text-primary">배포 상태:</strong> SignalX 데스크 승인 후 배포됨. 모든 배포는 암호화된 채널을 통해 전송되며, 수신 확인 로그가 기록됩니다.
           </div>
         </div>
 

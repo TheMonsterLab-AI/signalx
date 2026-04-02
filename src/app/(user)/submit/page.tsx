@@ -163,25 +163,7 @@ export default function SubmitPage() {
   }
 
   return (
-    <div className="font-body text-on-surface" style={{ backgroundColor: '#f3fbf5' }}>
-
-      {/* Header */}
-      <header className="fixed top-0 w-full z-50 bg-emerald-50/80 backdrop-blur-xl shadow-sm shadow-emerald-900/5">
-        <div className="flex justify-between items-center px-8 py-4 max-w-7xl mx-auto">
-          <div className="flex items-center gap-3">
-            <span className="material-symbols-outlined text-emerald-800">signal_cellular_alt</span>
-            <Link href="/" className="text-xl font-bold tracking-tighter text-emerald-900">SignalX</Link>
-          </div>
-          <div className="flex items-center gap-6">
-            <Link href="#" className="text-sm font-medium text-on-surface-variant hover:text-primary transition-colors">작동 방식</Link>
-            <Link href="#" className="text-sm font-medium text-on-surface-variant hover:text-primary transition-colors">법률</Link>
-            <Link href="/submit" className="bg-primary text-white px-5 py-2 rounded-full font-semibold text-sm active:scale-95 transition-transform">
-              새 제보
-            </Link>
-          </div>
-        </div>
-      </header>
-
+    <>
       <main className="min-h-screen pt-24 pb-20">
         <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-12 items-start">
 
@@ -535,7 +517,7 @@ export default function SubmitPage() {
 
             <div className="text-center pt-4">
               <p className="text-on-surface-variant/50 text-xs italic">
-                "진실은 당신을 자유롭게 할 것입니다. 그러나 먼저 불편하게 만들 것입니다." — SignalX 윤리위원회
+                &ldquo;진실은 당신을 자유롭게 할 것입니다. 그러나 먼저 불편하게 만들 것입니다.&rdquo; &mdash; SignalX 윤리위원회
               </p>
             </div>
           </div>
@@ -547,8 +529,8 @@ export default function SubmitPage() {
         <Link href="/"       className="flex flex-col items-center opacity-60"><span className="material-symbols-outlined">home</span><span className="text-[10px] font-bold">홈</span></Link>
         <Link href="/submit" className="flex flex-col items-center text-primary"><span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>sensors</span><span className="text-[10px] font-bold">제보</span></Link>
         <Link href="/track"  className="flex flex-col items-center opacity-60"><span className="material-symbols-outlined">manage_search</span><span className="text-[10px] font-bold">확인</span></Link>
-        <Link href="#"       className="flex flex-col items-center opacity-60"><span className="material-symbols-outlined">settings</span><span className="text-[10px] font-bold">설정</span></Link>
+        <Link href="/about"       className="flex flex-col items-center opacity-60"><span className="material-symbols-outlined">settings</span><span className="text-[10px] font-bold">설정</span></Link>
       </nav>
-    </div>
+    </>
   )
 }

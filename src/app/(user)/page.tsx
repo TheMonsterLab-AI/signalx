@@ -7,36 +7,8 @@ export default function HomePage() {
   const router = useRouter()
 
   return (
-    <div className="font-body text-on-surface" style={{ backgroundColor: '#f3fbf5', minHeight: '100dvh' }}>
-
-      {/* ── TopAppBar ──────────────────────────────────────────────────────── */}
-      <header className="fixed top-0 w-full z-50 bg-emerald-50/90 backdrop-blur-xl border-b border-emerald-900/5">
-        <div className="flex justify-between items-center px-8 py-5 max-w-[1440px] mx-auto">
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-emerald-800 text-3xl">signal_cellular_alt</span>
-            <span className="text-2xl font-bold tracking-tighter text-emerald-900">SignalX</span>
-          </div>
-          <nav className="hidden md:flex gap-10 items-center">
-            <a className="text-emerald-900 font-bold hover:text-primary transition-colors" href="#">홈</a>
-            <a className="text-on-surface-variant/70 hover:text-on-surface-variant transition-colors" href="#">시그널</a>
-            <a className="text-on-surface-variant/70 hover:text-on-surface-variant transition-colors" href="#">글로벌 맵</a>
-            <a className="text-on-surface-variant/70 hover:text-on-surface-variant transition-colors" href="#">소개</a>
-          </nav>
-          <div className="flex items-center gap-4">
-            <Link href="/track" className="hidden lg:block text-on-surface-variant font-semibold px-4 py-2 hover:text-on-surface transition-colors">
-              제보 확인
-            </Link>
-            <Link
-              href="/submit"
-              className="bg-primary hover:bg-primary-container hover:text-on-primary-container text-white font-bold px-6 py-2.5 rounded-full transition-all active:scale-95 shadow-md"
-            >
-              지금 제보하기
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      <main className="pt-32 pb-40">
+    <>
+    <main className="pt-32 pb-40">
 
         {/* ── Hero ─────────────────────────────────────────────────────────── */}
         <section className="max-w-[1440px] mx-auto px-8 lg:px-16 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
@@ -196,7 +168,7 @@ export default function HomePage() {
                 </div>
                 <h3 className="text-3xl font-black tracking-tight text-on-surface mb-4">원스톱 배포</h3>
                 <p className="text-on-surface-variant text-lg leading-relaxed">
-                  검증 완료 즉시 해당 국가 파트너 미디어 · 기관 · 정부에 자동 배포됩니다.
+                  SignalX 데스크가 직접 검토·승인한 후에만 해당 국가 파트너 미디어·기관에 배포됩니다.
                 </p>
               </div>
               <div className="mt-8 space-y-3">
@@ -255,7 +227,7 @@ export default function HomePage() {
               <h4 className="text-xs font-bold uppercase tracking-widest text-white/40 mb-4">플랫폼</h4>
               <ul className="space-y-3">
                 {['제보하기', '제보 확인', '작동 방식', '보안'].map(l => (
-                  <li key={l}><a href="#" className="text-white/60 hover:text-white text-sm transition-colors">{l}</a></li>
+                  <li key={l}><a href="/about" className="text-white/60 hover:text-white text-sm transition-colors">{l}</a></li>
                 ))}
               </ul>
             </div>
@@ -263,7 +235,7 @@ export default function HomePage() {
               <h4 className="text-xs font-bold uppercase tracking-widest text-white/40 mb-4">법률</h4>
               <ul className="space-y-3">
                 {['개인정보처리방침', '서비스 약관', '면책 조항', '내부고발자 보호'].map(l => (
-                  <li key={l}><a href="#" className="text-white/60 hover:text-white text-sm transition-colors">{l}</a></li>
+                  <li key={l}><a href="/about" className="text-white/60 hover:text-white text-sm transition-colors">{l}</a></li>
                 ))}
               </ul>
             </div>
@@ -309,6 +281,6 @@ export default function HomePage() {
           <span className="text-[10px] font-bold">소개</span>
         </Link>
       </nav>
-    </div>
+    </>
   )
 }
