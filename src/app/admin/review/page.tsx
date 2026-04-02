@@ -601,6 +601,13 @@ export default function ReviewQueuePage() {
   const [rejectSignal, setRejectSignal] = useState<Signal | null>(null)
   const [deploySignal, setDeploySignal] = useState<Signal | null>(null)
 
+  // 토스트
+  const [toast, setToast] = useState<{ ok: boolean; text: string } | null>(null)
+  const showToast = (ok: boolean, text: string) => {
+    setToast({ ok, text })
+    setTimeout(() => setToast(null), 4000)
+  }
+
   const buildUrl = useCallback((p = 1) => {
     const params = new URLSearchParams({ page: String(p), limit: '20' })
     if (filterMe)            params.set('assignedToMe', 'true')
@@ -649,12 +656,15 @@ export default function ReviewQueuePage() {
   }
 
   const handleEscalate = async (id: string) => {
-    await fetch(`/api/admin/signals/${id}/escalate`, {
+    const confirmed = window.confirm('Global Director에게 즉시 검토를 요청하시겠습니까?\n\n이 제보를 긴급으로 에스컬레이션합니다.')
+    if (!confirmed) return
+    const res = await fetch(`/api/admin/signals/${id}/escalate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ reason: '수동 에스컬레이션 — 관리자 즉시 검토 필요' }),
     })
-    alert('Global Director에게 에스컬레이션 요청이 전송되었습니다.')
+    if (res.ok) showToast(true, 'Global Director에게 에스컬레이션 요청이 전송되었습니다.')
+    else showToast(false, '에스컬레이션 요청 실패. 다시 시도해주세요.')
   }
 
   const handleBulkApprove = async () => {
@@ -690,6 +700,23 @@ export default function ReviewQueuePage() {
 
   return (
     <div className="p-6 space-y-5">
+
+      {/* ── 토스트 알림 ── */}
+      {toast && (
+        <div className={`fixed top-6 right-6 z-[100] flex items-center gap-3 px-5 py-3 rounded-2xl shadow-lg text-sm font-semibold transition-all ${
+          toast.ok
+            ? 'bg-primary text-white'
+            : 'bg-red-500 text-white'
+        }`}>
+          <span className="material-symbols-outlined text-base">
+            {toast.ok ? 'check_circle' : 'error'}
+          </span>
+          {toast.text}
+          <button onClick={() => setToast(null)} className="ml-2 opacity-70 hover:opacity-100">
+            <span className="material-symbols-outlined text-sm">close</span>
+          </button>
+        </div>
+      )}
 
       {/* ── 헤더 ── */}
       <div className="flex items-start justify-between flex-wrap gap-4">

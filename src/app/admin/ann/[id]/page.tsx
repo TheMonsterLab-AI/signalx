@@ -82,6 +82,11 @@ export default function AdminANNDetail() {
   const [actionLoading, setActionLoading] = useState(false)
   const [reprocessMsg,  setReprocessMsg]  = useState<{ ok: boolean; text: string } | null>(null)
   const [polling,       setPolling]       = useState(false)
+  const [toast,         setToast]         = useState<{ ok: boolean; text: string } | null>(null)
+  const showToast = (ok: boolean, text: string) => {
+    setToast({ ok, text })
+    setTimeout(() => setToast(null), 4000)
+  }
 
   const load = useCallback(() => {
     if (!signalId) return
@@ -170,6 +175,19 @@ export default function AdminANNDetail() {
 
   return (
     <div className="p-6 max-w-[1400px] mx-auto w-full flex flex-col gap-6">
+
+      {/* 토스트 알림 */}
+      {toast && (
+        <div className={`fixed top-6 right-6 z-[100] flex items-center gap-3 px-5 py-3 rounded-2xl shadow-lg text-sm font-semibold ${
+          toast.ok ? 'bg-primary text-white' : 'bg-red-500 text-white'
+        }`}>
+          <span className="material-symbols-outlined text-base">{toast.ok ? 'check_circle' : 'error'}</span>
+          {toast.text}
+          <button onClick={() => setToast(null)} className="ml-2 opacity-70 hover:opacity-100">
+            <span className="material-symbols-outlined text-sm">close</span>
+          </button>
+        </div>
+      )}
 
       {/* 재검증 상태 배너 */}
       {reprocessMsg && (
@@ -525,12 +543,15 @@ export default function AdminANNDetail() {
                 </button>
                 <button
                   onClick={async () => {
-                    await fetch(`/api/admin/signals/${signalId}/escalate`, {
+                    const confirmed = window.confirm('Global Director에게 즉시 검토를 요청하시겠습니까?')
+                    if (!confirmed) return
+                    const res = await fetch(`/api/admin/signals/${signalId}/escalate`, {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ reason: 'ANN 상세 페이지에서 수동 에스컬레이션' }),
                     })
-                    alert('Global Director에게 에스컬레이션 요청이 전송되었습니다.')
+                    if (res.ok) showToast(true, 'Global Director에게 에스컬레이션 요청이 전송되었습니다.')
+                    else showToast(false, '에스컬레이션 요청 실패.')
                   }}
                   className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-outline-variant/30 text-sm font-medium transition-colors bg-white text-on-surface-variant hover:bg-surface-container"
                 >
