@@ -93,6 +93,8 @@ export default function AdminANNDetail() {
     fetch(`/api/admin/ann/${signalId}`)
       .then(r => r.json())
       .then(d => {
+        // exists: false → ANN 레코드 없음 (signal은 있음)
+        // error → 시그널 자체 없음
         setData(d.error ? null : d)
         setLoading(false)
       })
@@ -161,8 +163,9 @@ export default function AdminANNDetail() {
   }
 
   // ── 데이터 추출 ─────────────────────────────────────────────────────────
-  const ann        = data               // AnnVerification record
-  const signal     = data?.signal       // Signal record
+  const hasAnn     = data && data.exists !== false   // ANN 레코드 존재 여부
+  const ann        = hasAnn ? data : null            // AnnVerification record
+  const signal     = data?.signal                    // Signal record (exists: false일 때도 있음)
   const finalScore = ann?.finalScore
   const finalGrade = ann?.finalGrade
   const gradeInfo  = gradeLabel(finalGrade)
@@ -270,7 +273,7 @@ export default function AdminANNDetail() {
         </div>
       )}
 
-      {!isProcessing && !data && !loading && (
+      {!isProcessing && !hasAnn && !loading && (
         <div className="bg-white rounded-2xl border border-outline-variant/30 p-16 text-center">
           <span className="material-symbols-outlined text-5xl text-on-surface-variant/40 block mb-4">psychology</span>
           <div className="font-bold text-on-surface mb-1">ANN 검증 결과 없음</div>
@@ -283,7 +286,7 @@ export default function AdminANNDetail() {
       )}
 
       {/* 메인 콘텐츠 (ANN 결과 있을 때만) */}
-      {!isProcessing && data && (
+      {!isProcessing && hasAnn && (
         <>
           {/* 요약 카드 */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

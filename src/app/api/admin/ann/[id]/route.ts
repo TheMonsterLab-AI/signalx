@@ -23,7 +23,18 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     },
   })
 
-  if (!verification) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  // ANN 레코드 없음 → 404 대신 200으로 빈 상태 반환 (콘솔 오류 방지)
+  if (!verification) {
+    // 시그널 자체는 존재하는지 확인
+    const signal = await prisma.signal.findUnique({
+      where: { id: params.id },
+      select: { id: true, title: true, country: true, category: true, status: true, annScore: true, annGrade: true },
+    })
+    if (!signal) return NextResponse.json({ error: 'Signal not found' }, { status: 404 })
+    let title = signal.title
+    try { title = decryptFromString(signal.title) } catch {}
+    return NextResponse.json({ exists: false, signal: { ...signal, title } })
+  }
 
   let title = verification.signal.title
   try { title = decryptFromString(verification.signal.title) } catch {}
