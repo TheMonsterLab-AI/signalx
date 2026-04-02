@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 
-const Globe = dynamic(() => import('react-globe.gl'), {
+const Globe = dynamic(() => import('@/components/GlobeWrapper'), {
   ssr: false,
   loading: () => (
     <div className="w-full h-full flex items-center justify-center bg-emerald-900/20 rounded-3xl">

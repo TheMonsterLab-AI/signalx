@@ -34,14 +34,14 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-dropzone": "^14.2.3",
-    "react-globe.gl": "^2.37.0",
+    "react-globe.gl": "^2.26.0",
     "react-hot-toast": "^2.4.1",
     "recharts": "^2.12.7",
     "sharp": "^0.33.4",
     "swr": "^2.2.5",
     "tailwind-merge": "^2.4.0",
     "tailwindcss": "^3.4.6",
-    "three": "^0.167.0"
+    "three": "^0.177.0"
   },
   "devDependencies": {
     "@types/node": "^20.19.37",
