@@ -375,7 +375,7 @@ async function callGPT(prompt: string): Promise<AiModelResult> {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({
-      model: 'gpt-4o',
+      model: 'gpt-4o-mini',
       temperature: 0,
       max_tokens: 300,
       messages: [{ role: 'user', content: prompt }],
@@ -403,7 +403,7 @@ async function callGemini(prompt: string): Promise<AiModelResult> {
   if (!apiKey) throw new Error('GOOGLE_AI_API_KEY not set')
 
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=${apiKey}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -435,7 +435,7 @@ async function callLlama(prompt: string): Promise<AiModelResult> {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({
-      model: 'meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo',
+      model: 'meta-llama/Llama-3.1-70B-Instruct-Turbo',
       temperature: 0,
       max_tokens: 300,
       messages: [{ role: 'user', content: prompt }],
