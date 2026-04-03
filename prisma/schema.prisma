@@ -22,6 +22,8 @@ model Signal {
   country     String
   title       String
   content     String   @db.Text
+  // 관리자 표시용 제목 (Vault 이전에 저장, 암호화 안 함 — 비식별 요약)
+  displayTitle String?
   
   // Processing state
   stage       SignalStage @default(SUBMITTED)

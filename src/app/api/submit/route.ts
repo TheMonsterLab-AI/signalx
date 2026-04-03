@@ -59,12 +59,13 @@ export async function POST(req: NextRequest) {
     const signal = await prisma.signal.create({
       data: {
         trackingToken: tokenHash,
-        category: body.category,
-        country:  body.country.trim(),
-        title:    encryptedTitle,
-        content:  encryptedContent,
-        stage:    'SUBMITTED',
-        status:   'PENDING',
+        category:     body.category,
+        country:      body.country.trim(),
+        title:        encryptedTitle,
+        content:      encryptedContent,
+        displayTitle: body.title.trim().slice(0, 80), // 관리자용 비식별 요약 제목
+        stage:        'SUBMITTED',
+        status:       'PENDING',
         stageHistory: {
           create: {
             stage:     'SUBMITTED',

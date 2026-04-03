@@ -68,8 +68,14 @@ export async function GET(req: NextRequest) {
   
   // ── Decrypt titles for display ────────────────────────────────────────────
   const decrypted = signals.map((s: any) => {
-    let title = s.title
-    try { title = decryptFromString(s.title) } catch {}
+    // displayTitle 우선 사용, 없으면 복호화 시도, 실패 시 trackingToken
+    let title = s.displayTitle || ''
+    if (!title) {
+      try { title = decryptFromString(s.title) } catch {}
+    }
+    if (!title || title === '[VAULT_TRANSFERRED]') {
+      title = `#${s.trackingToken.slice(-8)}`
+    }
     
     return {
       id:           s.id,
