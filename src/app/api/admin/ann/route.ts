@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
       include: {
         signal: {
           select: {
-            id: true, trackingToken: true, title: true,
+            id: true, trackingToken: true, title: true, displayTitle: true,
             category: true, country: true, stage: true, status: true,
           },
         },
@@ -36,8 +36,11 @@ export async function GET(req: NextRequest) {
   const { decryptFromString } = await import('@/lib/crypto')
 
   const items = verifications.map((v: any) => {
-    let title = v.signal.title
-    try { title = decryptFromString(v.signal.title) } catch {}
+    let title = v.signal.displayTitle || ''
+    if (!title) {
+      try { title = decryptFromString(v.signal.title) } catch {}
+    }
+    if (!title || title === '[VAULT_TRANSFERRED]') title = `#${v.signal.trackingToken.slice(-8)}`
     return {
       ...v,
       signal: { ...v.signal, title },

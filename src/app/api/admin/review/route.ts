@@ -82,8 +82,11 @@ export async function GET(req: NextRequest) {
   const { decryptFromString } = await import('@/lib/crypto')
 
   const items = signals.map((s: any) => {
-    let title = s.title
-    try { title = decryptFromString(s.title) } catch {}
+    let title = s.displayTitle || ''
+    if (!title) {
+      try { title = decryptFromString(s.title) } catch {}
+    }
+    if (!title || title === '[VAULT_TRANSFERRED]') title = `#${s.trackingToken.slice(-8)}`
     return { ...s, title }
   })
 
