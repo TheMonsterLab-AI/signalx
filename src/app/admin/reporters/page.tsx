@@ -30,22 +30,35 @@ export default function ReportersPage() {
   const [saving,    setSaving]    = useState(false)
   const [filter,    setFilter]    = useState({ q: '', country: '', category: '' })
   const [selected,  setSelected]  = useState<any>(null)
+  const [page,      setPage]      = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [total,     setTotal]     = useState(0)
+  const LIMIT = 50
 
-  const load = () => {
-    const p = new URLSearchParams({
-      limit: '30',
+  const load = (p = page) => {
+    const params = new URLSearchParams({
+      limit: String(LIMIT),
+      page:  String(p),
       ...(filter.q        ? { q:        filter.q        } : {}),
       ...(filter.country  ? { country:  filter.country  } : {}),
       ...(filter.category ? { category: filter.category } : {}),
     })
-    fetch(`/api/admin/reporters?${p}`)
+    fetch(`/api/admin/reporters?${params}`)
       .then(r => r.json())
-      .then(d => { if (d.reporters) setReporters(d.reporters); if (d.stats) setStats(d.stats) })
+      .then(d => {
+        if (d.reporters) setReporters(d.reporters)
+        if (d.stats)     setStats(d.stats)
+        if (d.pagination) {
+          setTotalPages(d.pagination.pages)
+          setTotal(d.pagination.total)
+        }
+      })
       .catch(() => {})
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { load() }, [filter])
+  useEffect(() => { setPage(1); load(1) }, [filter])
+  useEffect(() => { load(page) }, [page])
 
   const handleSave = async () => {
     if (!form.name || !form.email || !form.organization) return
@@ -217,6 +230,57 @@ export default function ReportersPage() {
           </table>
         </div>
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-1">
+          <p className="text-sm text-on-surface-variant">
+            전체 <span className="font-bold text-on-surface">{total}</span>명 중{' '}
+            {(page - 1) * LIMIT + 1}–{Math.min(page * LIMIT, total)}명 표시
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container disabled:opacity-30 transition-colors"
+            >
+              <span className="material-symbols-outlined text-sm">chevron_left</span>
+            </button>
+            {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+              let pageNum: number
+              if (totalPages <= 7) {
+                pageNum = i + 1
+              } else if (page <= 4) {
+                pageNum = i + 1
+              } else if (page >= totalPages - 3) {
+                pageNum = totalPages - 6 + i
+              } else {
+                pageNum = page - 3 + i
+              }
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => setPage(pageNum)}
+                  className={`w-8 h-8 rounded-lg text-sm font-bold transition-colors ${
+                    page === pageNum
+                      ? 'bg-primary text-white'
+                      : 'text-on-surface-variant hover:bg-surface-container'
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              )
+            })}
+            <button
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container disabled:opacity-30 transition-colors"
+            >
+              <span className="material-symbols-outlined text-sm">chevron_right</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Add Reporter Modal */}
       {showForm && (
