@@ -29,8 +29,8 @@ export async function prepareDistribution(
     throw new Error('ANN 검증이 완료되지 않았습니다')
   }
 
-  // 자동 추천: 분야·국가 일치 기자
-  const suggested = overrideReporterIds?.length
+  // 자동 추천: 분야·국가 일치 우선, 없으면 전체 활성 기자
+  let suggested = overrideReporterIds?.length
     ? await prisma.reporter.findMany({
         where: { id: { in: overrideReporterIds }, active: true },
       })
@@ -38,7 +38,6 @@ export async function prepareDistribution(
         where: {
           active: true,
           preferredCategories: { has: signal.category as string },
-          // 국가 일치 OR 글로벌 기자
           OR: [
             { country: signal.country },
             { country: '글로벌' },
@@ -47,6 +46,15 @@ export async function prepareDistribution(
         orderBy: { responseRate: 'desc' },
         take: 20,
       })
+
+  // 매칭 없으면 전체 활성 기자 fallback
+  if (suggested.length === 0 && !overrideReporterIds?.length) {
+    suggested = await prisma.reporter.findMany({
+      where:   { active: true },
+      orderBy: { responseRate: 'desc' },
+      take:    20,
+    })
+  }
 
   if (suggested.length === 0) return { suggested: [], draftCount: 0 }
 
