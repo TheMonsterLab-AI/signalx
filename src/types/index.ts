@@ -232,7 +232,7 @@ export const STATUS_LABELS: Record<SignalStatus, string> = {
   IN_PROGRESS: '처리 중',
   VERIFIED: '검증 완료',
   LIKELY_TRUE: '사실 가능성 높음',
-  UNDER_REVIEW: '추가 검토 필요',
+  UNDER_REVIEW: '검토 필요',
   UNVERIFIED: '미검증',
   LIKELY_FALSE: '거짓 가능성 높음',
   REJECTED: '거부됨',
@@ -250,7 +250,7 @@ export const CATEGORY_LABELS: Record<Category, string> = {
 export const ANN_GRADE_LABELS: Record<AnnGrade, string> = {
   VERIFIED: '검증 완료',
   LIKELY_TRUE: '사실 가능성 높음',
-  UNDER_REVIEW: '검토 중',
+  UNDER_REVIEW: '검토 필요',
   UNVERIFIED: '미검증',
   LIKELY_FALSE: '거짓 가능성 높음',
 }
