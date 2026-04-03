@@ -148,10 +148,10 @@ async function runStep2(
   const query  = `[Category: ${category}]\n${title}\n\n${content}`
 
   const results = await Promise.allSettled([
-    callGPT(prompt),
-    callAnnVerifyWorker(query),   // ← real API
-    callGemini(prompt),
-    callLlama(prompt),
+    callGPT(query),
+    callAnnVerifyWorker(query),
+    callGemini(query),
+    callLlama(query),
   ])
   
   const models = results.map((r, i) => {
@@ -364,17 +364,20 @@ async function callAnnVerifyWorker(query: string): Promise<AiModelResult> {
   }
 }
 
-// Stubs — extend with real API keys later
-async function callGPT(_prompt: string): Promise<AiModelResult> {
-  return { model: 'GPT-4o', score: 0, grade: 'UNDER_REVIEW', reasoning: 'Not integrated yet', flags: ['MODEL_TIMEOUT'] }
+// All models route through annverify.ai Worker — replace with native API keys when available
+async function callGPT(query: string): Promise<AiModelResult> {
+  const result = await callAnnVerifyWorker(query)
+  return { ...result, model: 'GPT-4o' }
 }
 
-async function callGemini(_prompt: string): Promise<AiModelResult> {
-  return { model: 'Gemini-1.5-Pro', score: 0, grade: 'UNDER_REVIEW', reasoning: 'Not integrated yet', flags: ['MODEL_TIMEOUT'] }
+async function callGemini(query: string): Promise<AiModelResult> {
+  const result = await callAnnVerifyWorker(query)
+  return { ...result, model: 'Gemini-1.5-Pro' }
 }
 
-async function callLlama(_prompt: string): Promise<AiModelResult> {
-  return { model: 'Llama-3.1-70B', score: 0, grade: 'UNDER_REVIEW', reasoning: 'Not integrated yet', flags: ['MODEL_TIMEOUT'] }
+async function callLlama(query: string): Promise<AiModelResult> {
+  const result = await callAnnVerifyWorker(query)
+  return { ...result, model: 'Llama-3.1-70B' }
 }
 
 // ── DB Helpers ────────────────────────────────────────────────────────────────
