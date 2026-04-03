@@ -2,8 +2,15 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import type { DashboardStats, SignalFeedItem } from '@/types'
 import { STAGE_LABELS, STATUS_LABELS, CATEGORY_LABELS } from '@/types'
+
+const Globe = dynamic(() => import('@/components/GlobeWrapper'), { ssr: false, loading: () => (
+  <div className="w-full h-full flex items-center justify-center">
+    <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+  </div>
+) })
 
 // ── Mock data structure matching real API response ────────────────────────────
 const MOCK_STATS: DashboardStats = {
@@ -148,15 +155,20 @@ export default function AdminDashboard() {
                 <span className="material-symbols-outlined text-sm">open_in_full</span>
               </Link>
             </div>
-            {/* Globe canvas — Three.js mounted via component */}
-            <div className="relative h-72 bg-[#1a2e24] flex items-center justify-center">
-              <div className="text-center text-white/40">
-                <span className="material-symbols-outlined text-5xl mb-2 block">public</span>
-                <p className="text-sm font-medium">리스크 맵 로딩 중...</p>
-                <p className="text-xs mt-1">Three.js 지구본이 여기 마운트됩니다</p>
-              </div>
-              {/* Risk node indicators overlay */}
-              <div className="absolute top-4 left-4">
+            {/* Globe */}
+            <div className="relative h-72 bg-[#1a2e24] overflow-hidden">
+              <Globe
+                globeImageUrl="//unpkg.com/three-globe/example/img/earth-day.jpg"
+                bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
+                backgroundColor="rgba(26,46,36,1)"
+                atmosphereColor="#3EB489"
+                atmosphereAltitude={0.12}
+                animateIn
+                rotationSpeed={0.4}
+                enablePointerInteraction={false}
+              />
+              {/* Legend overlay */}
+              <div className="absolute top-4 left-4 pointer-events-none">
                 <div className="flex flex-col gap-2">
                   {[
                     { color: 'bg-red-500',    label: '위급 (2)' },
