@@ -25,37 +25,60 @@ export async function prepareDistribution(
     include: { annVerification: true },
   })
 
-  // 자동 추천: 분야·국가 일치 우선, 없으면 전체 활성 기자
-  // 정렬 기준: 배포 횟수 적은 기자 → 마지막 배포 오래된 기자 순 (공정 순환)
-  const ROTATION_ORDER = [
-    { totalDeliveries: 'asc' as const },
-    { lastDeliveredAt: 'asc' as const },
+  // 자동 추천: 분야·국가 기반 매칭 점수 계산 후 상위 20명 추천
+  // 매번 같은 기자가 추천되지 않도록 동점자는 랜덤 셔플
+  if (overrideReporterIds?.length) {
+    const suggested = await prisma.reporter.findMany({
+      where: { id: { in: overrideReporterIds }, active: true },
+    })
+    return { suggested, draftCount: suggested.length }
+  }
+
+  // 1순위: 분야 + 국가 모두 일치
+  const tier1 = await prisma.reporter.findMany({
+    where: {
+      active: true,
+      preferredCategories: { has: signal.category as string },
+      country: signal.country,
+    },
+  })
+
+  // 2순위: 분야만 일치 (1순위 제외)
+  const tier1Ids = new Set(tier1.map((r: any) => r.id))
+  const tier2 = await prisma.reporter.findMany({
+    where: {
+      active: true,
+      preferredCategories: { has: signal.category as string },
+      country: { not: signal.country },
+      id: { notIn: [...tier1Ids] },
+    },
+  })
+
+  // 3순위: 국가만 일치 (1,2순위 제외)
+  const tier2Ids = new Set(tier2.map((r: any) => r.id))
+  const tier3 = await prisma.reporter.findMany({
+    where: {
+      active: true,
+      country: signal.country,
+      id: { notIn: [...tier1Ids, ...tier2Ids] },
+    },
+  })
+
+  // 각 티어 내에서 랜덤 셔플 → 매번 다른 기자 추천
+  const shuffle = (arr: any[]) => arr.sort(() => Math.random() - 0.5)
+
+  const pool = [
+    ...shuffle(tier1),
+    ...shuffle(tier2),
+    ...shuffle(tier3),
   ]
 
-  let suggested = overrideReporterIds?.length
-    ? await prisma.reporter.findMany({
-        where: { id: { in: overrideReporterIds }, active: true },
-      })
-    : await prisma.reporter.findMany({
-        where: {
-          active: true,
-          preferredCategories: { has: signal.category as string },
-          OR: [
-            { country: signal.country },
-            { country: '글로벌' },
-          ],
-        },
-        orderBy: ROTATION_ORDER,
-        take: 20,
-      })
+  let suggested = pool.slice(0, 20)
 
-  // 매칭 없으면 전체 활성 기자 fallback
-  if (suggested.length === 0 && !overrideReporterIds?.length) {
-    suggested = await prisma.reporter.findMany({
-      where:   { active: true },
-      orderBy: ROTATION_ORDER,
-      take:    20,
-    })
+  // fallback: 매칭 없으면 전체 활성 기자 중 랜덤 20명
+  if (suggested.length === 0) {
+    const all = await prisma.reporter.findMany({ where: { active: true } })
+    suggested = shuffle(all).slice(0, 20)
   }
 
   if (suggested.length === 0) return { suggested: [], draftCount: 0 }
