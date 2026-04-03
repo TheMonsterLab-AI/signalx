@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import * as THREE from 'three'
 
 const RISK_NODES = [
   { name: 'Seoul',     country: '한국',     lat: 37.5,  lon: 127,   risk: 'CRITICAL',  type: '기업',  score: 91, change: '+340%', signals: 14 },
@@ -38,18 +39,12 @@ export default function AdminMapPage() {
   const globeRef = useRef<any>({ rx: 0.25, ry: 0, vx: 0, vy: 0, drag: false, lx: 0, ly: 0, zoom: 2.7, raf: 0 })
 
   useEffect(() => {
-    let THREE: any
     const G = globeRef.current
     let scene: any, cam: any, rend: any, sphere: any, cloud: any
 
     async function init() {
-      if (typeof window === 'undefined') return
-      // Load Three.js from CDN
-      const script = document.createElement('script')
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'
-      script.onload = () => {
-        THREE = (window as any).THREE
-        if (!THREE || !canvasRef.current) return
+      if (typeof window === 'undefined' || !canvasRef.current) return
+      {
 
         const cv = canvasRef.current
         const w = cv.parentElement?.clientWidth || 800
@@ -93,9 +88,9 @@ export default function AdminMapPage() {
         scene.add(new THREE.AmbientLight(0x1F4033, 2.5))
         const sun = new THREE.DirectionalLight(0x3EB489, 1.5); sun.position.set(5, 3, 5); scene.add(sun)
 
-        // Earth textures
+        // Earth textures (unpkg three-globe — same as user map)
         const tl = new THREE.TextureLoader()
-        tl.load('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/textures/planets/earth_atmos_2048.jpg', (t: any) => {
+        tl.load('//unpkg.com/three-globe/example/img/earth-day.jpg', (t: any) => {
           sphere.material.map = t; sphere.material.color.setHex(0xffffff); sphere.material.needsUpdate = true
         })
 
@@ -103,7 +98,7 @@ export default function AdminMapPage() {
         cloud = new THREE.Mesh(
           new THREE.SphereGeometry(1.012, 48, 48),
           new THREE.MeshPhongMaterial({
-            map: tl.load('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/textures/planets/earth_clouds_1024.png'),
+            map: tl.load('//unpkg.com/three-globe/example/img/earth-water.png'),
             transparent: true, opacity: 0.18, depthWrite: false
           })
         )
@@ -185,7 +180,6 @@ export default function AdminMapPage() {
 
         animate()
       }
-      document.head.appendChild(script)
     }
 
     function animate() {
