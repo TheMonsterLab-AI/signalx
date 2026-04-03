@@ -25,10 +25,6 @@ export async function prepareDistribution(
     include: { annVerification: true },
   })
 
-  if (!signal.annVerification?.finalGrade) {
-    throw new Error('ANN 검증이 완료되지 않았습니다')
-  }
-
   // 자동 추천: 분야·국가 일치 우선, 없으면 전체 활성 기자
   let suggested = overrideReporterIds?.length
     ? await prisma.reporter.findMany({

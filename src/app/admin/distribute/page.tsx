@@ -27,16 +27,22 @@ function DistributeModal({
   // 1단계: 기자 추천 불러오기
   const handlePrepare = async () => {
     setLoading(true)
-    const res  = await fetch('/api/admin/distribute', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ action: 'PREPARE', signalId }),
-    })
-    const data = await res.json()
-    setSuggested(data.suggested || [])
-    setSelected(new Set((data.suggested || []).map((r: any) => r.id)))
-    setStep('review')
-    setLoading(false)
+    try {
+      const res  = await fetch('/api/admin/distribute', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ action: 'PREPARE', signalId }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || '기자 추천 실패')
+      setSuggested(data.suggested || [])
+      setSelected(new Set((data.suggested || []).map((r: any) => r.id)))
+    } catch (e: any) {
+      alert(e.message)
+    } finally {
+      setStep('review')
+      setLoading(false)
+    }
   }
 
   // 2단계: 데스크 승인 → 발송
