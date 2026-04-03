@@ -364,20 +364,95 @@ async function callAnnVerifyWorker(query: string): Promise<AiModelResult> {
   }
 }
 
-// All models route through annverify.ai Worker — replace with native API keys when available
-async function callGPT(query: string): Promise<AiModelResult> {
-  const result = await callAnnVerifyWorker(query)
-  return { ...result, model: 'GPT-4o' }
+// ✅ Real: OpenAI GPT-4o
+async function callGPT(prompt: string): Promise<AiModelResult> {
+  const apiKey = process.env.OPENAI_API_KEY
+  if (!apiKey) throw new Error('OPENAI_API_KEY not set')
+
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify({
+      model: 'gpt-4o',
+      temperature: 0,
+      max_tokens: 300,
+      messages: [{ role: 'user', content: prompt }],
+    }),
+    signal: AbortSignal.timeout(25_000),
+  })
+  if (!res.ok) throw new Error(`OpenAI ${res.status}`)
+  const data = await res.json()
+  const text = data.choices?.[0]?.message?.content || ''
+  let parsed: any = {}
+  try { parsed = JSON.parse(text.replace(/```json|```/g, '').trim()) } catch {}
+  const score = typeof parsed.score === 'number' ? parsed.score : 0
+  return {
+    model:     'GPT-4o',
+    score,
+    grade:     scoreToGrade(score),
+    reasoning: parsed.reasoning || text.slice(0, 200),
+    flags:     parsed.flags || [],
+  }
 }
 
-async function callGemini(query: string): Promise<AiModelResult> {
-  const result = await callAnnVerifyWorker(query)
-  return { ...result, model: 'Gemini-1.5-Pro' }
+// ✅ Real: Google Gemini 1.5 Pro
+async function callGemini(prompt: string): Promise<AiModelResult> {
+  const apiKey = process.env.GOOGLE_AI_API_KEY
+  if (!apiKey) throw new Error('GOOGLE_AI_API_KEY not set')
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0, maxOutputTokens: 300 } }),
+      signal: AbortSignal.timeout(25_000),
+    }
+  )
+  if (!res.ok) throw new Error(`Gemini ${res.status}`)
+  const data = await res.json()
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+  let parsed: any = {}
+  try { parsed = JSON.parse(text.replace(/```json|```/g, '').trim()) } catch {}
+  const score = typeof parsed.score === 'number' ? parsed.score : 0
+  return {
+    model:     'Gemini-1.5-Pro',
+    score,
+    grade:     scoreToGrade(score),
+    reasoning: parsed.reasoning || text.slice(0, 200),
+    flags:     parsed.flags || [],
+  }
 }
 
-async function callLlama(query: string): Promise<AiModelResult> {
-  const result = await callAnnVerifyWorker(query)
-  return { ...result, model: 'Llama-3.1-70B' }
+// ✅ Real: Llama via Together AI
+async function callLlama(prompt: string): Promise<AiModelResult> {
+  const apiKey = process.env.TOGETHER_API_KEY
+  if (!apiKey) throw new Error('TOGETHER_API_KEY not set')
+
+  const res = await fetch('https://api.together.xyz/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify({
+      model: 'meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo',
+      temperature: 0,
+      max_tokens: 300,
+      messages: [{ role: 'user', content: prompt }],
+    }),
+    signal: AbortSignal.timeout(25_000),
+  })
+  if (!res.ok) throw new Error(`Together AI ${res.status}`)
+  const data = await res.json()
+  const text = data.choices?.[0]?.message?.content || ''
+  let parsed: any = {}
+  try { parsed = JSON.parse(text.replace(/```json|```/g, '').trim()) } catch {}
+  const score = typeof parsed.score === 'number' ? parsed.score : 0
+  return {
+    model:     'Llama-3.1-70B',
+    score,
+    grade:     scoreToGrade(score),
+    reasoning: parsed.reasoning || text.slice(0, 200),
+    flags:     parsed.flags || [],
+  }
 }
 
 // ── DB Helpers ────────────────────────────────────────────────────────────────
