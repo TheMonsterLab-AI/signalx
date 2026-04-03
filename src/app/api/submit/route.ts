@@ -80,21 +80,15 @@ export async function POST(req: NextRequest) {
       await handleFileUpload(signal.id, files)
     }
     
-    // ── 7. Vault transfer + ANN queue (fire-and-forget, non-blocking) ───────
+    // ── 7. ANN 먼저 → Vault (ANN이 원본 내용을 읽어야 함) ──────────────────
     setImmediate(async () => {
       try {
-        // 7a. 5초 내 Vault 이동 (보안 격리)
-        const { initiateVaultTransfer } = await import('@/lib/vault')
-        await initiateVaultTransfer(signal.id)
-      } catch (e) {
-        console.error('[VAULT] Transfer error:', e)
-      }
-      try {
-        // 7b. ANN 검증 큐 등록
+        // 7a. ANN 검증 큐 먼저 — 원본 암호화 내용으로 검증해야 함
         await queueAnnProcessing(signal.id)
       } catch (e) {
         console.error('[ANN_QUEUE] Error:', e)
       }
+      // 참고: Vault 이동은 ann-queue.ts 내부에서 ANN 완료 후 실행됨
     })
 
     // ── 8. 자동 리턴 메일 발송 (이메일 제공 시) ──────────────────────────────
