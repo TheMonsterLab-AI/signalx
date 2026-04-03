@@ -137,19 +137,19 @@ async function runStep1(signal: any): Promise<AnnStep1Result> {
 }
 
 async function runStep2(
-  title: string, 
+  title: string,
   content: string,
   category: string
 ): Promise<AnnStep2Result> {
   // Cross-AI Verification using 4 LLMs
-  // In production: parallel API calls to OpenAI, Anthropic, Google, Meta
-  
+  // Claude → annverify.ai Worker (real), others → stubs (extend later)
+
   const prompt = buildVerificationPrompt(title, content, category)
-  
-  // Production: replace with actual API calls
+  const query  = `[Category: ${category}]\n${title}\n\n${content}`
+
   const results = await Promise.allSettled([
     callGPT(prompt),
-    callClaude(prompt),
+    callAnnVerifyWorker(query),   // ← real API
     callGemini(prompt),
     callLlama(prompt),
   ])
@@ -323,26 +323,58 @@ Evaluate:
 Respond with JSON only: {"score": number, "grade": string, "reasoning": string, "flags": string[]}`
 }
 
-// ── AI API Stubs (replace with actual implementations) ───────────────────────
+// ── AI API Implementations ────────────────────────────────────────────────────
 
-async function callGPT(prompt: string): Promise<AiModelResult> {
-  // Production: openai.chat.completions.create(...)
-  return { model: 'GPT-4o', score: 91, grade: 'VERIFIED', reasoning: '내부 일관성 높음, 주장 구체적', flags: [] }
+// Worker verdict → AnnGrade 매핑
+const VERDICT_TO_GRADE: Record<string, AnnGrade> = {
+  VERIFIED:       'VERIFIED',
+  LIKELY_TRUE:    'LIKELY_TRUE',
+  PARTIALLY_TRUE: 'UNDER_REVIEW',
+  UNVERIFIED:     'UNVERIFIED',
+  MISLEADING:     'LIKELY_FALSE',
+  OUTDATED:       'UNDER_REVIEW',
+  FALSE:          'LIKELY_FALSE',
+  OPINION:        'UNDER_REVIEW',
 }
 
-async function callClaude(prompt: string): Promise<AiModelResult> {
-  // Production: anthropic.messages.create(...)
-  return { model: 'Claude-3.5-Sonnet', score: 89, grade: 'VERIFIED', reasoning: '논리 일관성 확인됨', flags: [] }
+// ✅ Real: annverify.ai Worker (Claude Sonnet 4.6)
+async function callAnnVerifyWorker(query: string): Promise<AiModelResult> {
+  const workerUrl = (process.env.ANN_WORKER_URL || 'https://api.annverify.ai').replace(/\/$/, '')
+
+  const res = await fetch(`${workerUrl}/api/signalx/check`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ query }),
+    signal:  AbortSignal.timeout(28_000),
+  })
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    throw new Error(`ANN Worker ${res.status}: ${text}`)
+  }
+
+  const data: { score: number; grade: string; verdict: string; summary: string } = await res.json()
+
+  return {
+    model:     'ANN-Engine (Claude Sonnet 4.6)',
+    score:     data.score,
+    grade:     VERDICT_TO_GRADE[data.verdict] ?? 'UNDER_REVIEW',
+    reasoning: data.summary,
+    flags:     [],
+  }
 }
 
-async function callGemini(prompt: string): Promise<AiModelResult> {
-  // Production: google.generativeai...
-  return { model: 'Gemini-1.5-Pro', score: 91, grade: 'VERIFIED', reasoning: '데이터 분석 일치', flags: [] }
+// Stubs — extend with real API keys later
+async function callGPT(_prompt: string): Promise<AiModelResult> {
+  return { model: 'GPT-4o', score: 0, grade: 'UNDER_REVIEW', reasoning: 'Not integrated yet', flags: ['MODEL_TIMEOUT'] }
 }
 
-async function callLlama(prompt: string): Promise<AiModelResult> {
-  // Production: ollama / Together AI / Replicate...
-  return { model: 'Llama-3.1-70B', score: 88, grade: 'VERIFIED', reasoning: '일부 맥락 추가 확인 권고', flags: ['MINOR_INCONSISTENCY'] }
+async function callGemini(_prompt: string): Promise<AiModelResult> {
+  return { model: 'Gemini-1.5-Pro', score: 0, grade: 'UNDER_REVIEW', reasoning: 'Not integrated yet', flags: ['MODEL_TIMEOUT'] }
+}
+
+async function callLlama(_prompt: string): Promise<AiModelResult> {
+  return { model: 'Llama-3.1-70B', score: 0, grade: 'UNDER_REVIEW', reasoning: 'Not integrated yet', flags: ['MODEL_TIMEOUT'] }
 }
 
 // ── DB Helpers ────────────────────────────────────────────────────────────────
