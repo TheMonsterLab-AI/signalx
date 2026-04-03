@@ -157,12 +157,14 @@ async function runStep2(
   const models = results.map((r, i) => {
     const names = ['GPT-4o', 'Claude-3.5-Sonnet', 'Gemini-1.5-Pro', 'Llama-3.1-70B']
     if (r.status === 'fulfilled') return r.value
-    // Graceful degradation — if one model fails, others continue
+    // Graceful degradation — log error for debugging
+    const errMsg = (r as PromiseRejectedResult).reason?.message || 'Unknown error'
+    console.error(`[ANN Step2] ${names[i]} failed:`, errMsg)
     return {
       model:     names[i],
       score:     0,
       grade:     'UNDER_REVIEW' as AnnGrade,
-      reasoning: 'Model unavailable',
+      reasoning: `Error: ${errMsg}`,
       flags:     ['MODEL_TIMEOUT'],
     } satisfies AiModelResult
   })
