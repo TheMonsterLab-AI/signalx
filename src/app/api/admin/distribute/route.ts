@@ -48,24 +48,29 @@ export async function POST(req: NextRequest) {
 
   // ── 1단계: 기자 추천 + 드래프트 생성 ──────────────────────────────────────
   if (action === 'PREPARE') {
-    const result = await prepareDistribution(signalId, admin.id, reporterIds)
+    try {
+      const result = await prepareDistribution(signalId, admin.id, reporterIds)
 
-    await prisma.auditLog.create({
-      data: {
-        userId:     admin.id,
-        action:     'DISTRIBUTION_PREPARED',
-        entityType: 'Signal',
-        entityId:   signalId,
-        details:    { suggestedCount: result.draftCount },
-      },
-    })
+      await prisma.auditLog.create({
+        data: {
+          userId:     admin.id,
+          action:     'DISTRIBUTION_PREPARED',
+          entityType: 'Signal',
+          entityId:   signalId,
+          details:    { suggestedCount: result.draftCount },
+        },
+      })
 
-    return NextResponse.json({
-      success:   true,
-      suggested: result.suggested,
-      draftCount: result.draftCount,
-      message:  `${result.draftCount}명 기자가 추천되었습니다. 검토 후 데스크 승인이 필요합니다.`,
-    })
+      return NextResponse.json({
+        success:    true,
+        suggested:  result.suggested,
+        draftCount: result.draftCount,
+        message:    `${result.draftCount}명 기자가 추천되었습니다. 검토 후 데스크 승인이 필요합니다.`,
+      })
+    } catch (err: any) {
+      console.error('[DISTRIBUTE PREPARE]', err)
+      return NextResponse.json({ error: err.message || '배포 준비 중 오류가 발생했습니다' }, { status: 500 })
+    }
   }
 
   // ── 2단계: 데스크 최종 승인 → 실제 발송 ──────────────────────────────────
@@ -74,19 +79,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '승인할 배포 대상을 선택하세요' }, { status: 400 })
     }
 
-    const result = await confirmDistribution(
-      signalId,
-      admin.id,
-      distributionIds,
-      deskNote
-    )
+    try {
+      const result = await confirmDistribution(
+        signalId,
+        admin.id,
+        distributionIds,
+        deskNote
+      )
 
-    return NextResponse.json({
-      success: true,
-      sent:    result.sent,
-      failed:  result.failed,
-      message: `데스크 승인 발송 완료: ${result.sent}건 성공${result.failed > 0 ? `, ${result.failed}건 실패` : ''}`,
-    })
+      return NextResponse.json({
+        success: true,
+        sent:    result.sent,
+        failed:  result.failed,
+        message: `데스크 승인 발송 완료: ${result.sent}건 성공${result.failed > 0 ? `, ${result.failed}건 실패` : ''}`,
+      })
+    } catch (err: any) {
+      console.error('[DISTRIBUTE CONFIRM]', err)
+      return NextResponse.json({ error: err.message || '배포 발송 중 오류가 발생했습니다' }, { status: 500 })
+    }
   }
 
   return NextResponse.json({ error: '유효하지 않은 action (PREPARE | CONFIRM)' }, { status: 400 })

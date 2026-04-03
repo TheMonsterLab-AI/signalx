@@ -61,10 +61,9 @@ export async function prepareDistribution(
       prisma.distribution.create({
         data: {
           signalId,
-          partnerId:  r.mediaPartnerId ?? 'DIRECT',
+          ...(r.mediaPartnerId ? { partnerId: r.mediaPartnerId } : {}),
           reporterId: r.id,
           status:     'PENDING',
-          // 발송자·승인자 기록
         },
       })
     )
