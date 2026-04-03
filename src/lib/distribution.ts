@@ -26,6 +26,12 @@ export async function prepareDistribution(
   })
 
   // 자동 추천: 분야·국가 일치 우선, 없으면 전체 활성 기자
+  // 정렬 기준: 배포 횟수 적은 기자 → 마지막 배포 오래된 기자 순 (공정 순환)
+  const ROTATION_ORDER = [
+    { totalDeliveries: 'asc' as const },
+    { lastDeliveredAt: 'asc' as const },
+  ]
+
   let suggested = overrideReporterIds?.length
     ? await prisma.reporter.findMany({
         where: { id: { in: overrideReporterIds }, active: true },
@@ -39,7 +45,7 @@ export async function prepareDistribution(
             { country: '글로벌' },
           ],
         },
-        orderBy: { responseRate: 'desc' },
+        orderBy: ROTATION_ORDER,
         take: 20,
       })
 
@@ -47,7 +53,7 @@ export async function prepareDistribution(
   if (suggested.length === 0 && !overrideReporterIds?.length) {
     suggested = await prisma.reporter.findMany({
       where:   { active: true },
-      orderBy: { responseRate: 'desc' },
+      orderBy: ROTATION_ORDER,
       take:    20,
     })
   }
